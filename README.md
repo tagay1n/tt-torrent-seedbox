@@ -39,6 +39,8 @@ Edit `config.yaml`. Key settings:
 
 - `tracker.base_url` / `tracker.feed_url`
 - `tracker.user_agent`, `tracker.rate_limit_per_sec`
+- `tracker.sitemap_url`, `tracker.sitemap_backfill_enabled`, `tracker.sitemap_backfill_force`, `tracker.sitemap_backfill_limit`
+- `tracker.sitemap_topic_regex` (regex filter for topic URLs)
 - `tracker.allow_forums`, `tracker.allow_tags`, `tracker.allow_regex_title`
 - `tracker.html_parse_enabled` (default false)
 - `porla.base_url`, `porla.auth`, `porla.managed_tag`
@@ -48,6 +50,20 @@ Edit `config.yaml`. Key settings:
 - `storage.db_path`
 
 Pinned torrents live in `pinned.txt` by default. Accepts topic URLs, infohashes, or Porla IDs (one per line).
+
+Tip: if the tracker’s `robots.txt` specifies `Crawl-delay`, ttseed will honor it by slowing requests below `rate_limit_per_sec`.
+
+## Sitemap backfill (initial ingest)
+Enable once to seed the catalog from `sitemap.xml`:
+```yaml
+tracker:
+  sitemap_backfill_enabled: true
+  sitemap_topic_regex:
+    - "^https?://[^/]+/viewtopic\\.php\\?f=\\d+&t=\\d+"
+  sitemap_backfill_limit: 0  # 0 = no limit
+```
+After a successful run, the backfill is marked complete in the DB. To rerun, set
+`tracker.sitemap_backfill_force: true` or delete the meta key `sitemap_backfill_done`.
 
 ## Porla API notes
 The client expects endpoints similar to:

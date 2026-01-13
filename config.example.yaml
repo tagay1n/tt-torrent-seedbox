@@ -3,6 +3,12 @@ tracker:
   feed_url: "https://SITE/feed.php"
   user_agent: "ttseed/0.1 (+https://SITE)"
   rate_limit_per_sec: 1
+  sitemap_url: "https://SITE/sitemap.xml"
+  sitemap_backfill_enabled: false
+  sitemap_backfill_force: false
+  sitemap_backfill_limit: 0
+  sitemap_topic_regex:
+    - "^https?://[^/]+/viewtopic\\.php\\?f=\\d+&t=\\d+"
   allow_forums: []
   allow_tags: []
   allow_regex_title: []

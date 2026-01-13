@@ -18,6 +18,11 @@ class TrackerConfig:
     feed_url: str
     user_agent: str = "ttseed/0.1"
     rate_limit_per_sec: float = 1.0
+    sitemap_url: str = ""
+    sitemap_backfill_enabled: bool = False
+    sitemap_backfill_force: bool = False
+    sitemap_backfill_limit: int = 0
+    sitemap_topic_regex: List[str] = field(default_factory=list)
     allow_forums: List[str] = field(default_factory=list)
     allow_tags: List[str] = field(default_factory=list)
     allow_regex_title: List[str] = field(default_factory=list)
@@ -96,6 +101,11 @@ def load_config(path: str) -> Config:
         feed_url=_get(tracker_raw, "feed_url", ""),
         user_agent=_get(tracker_raw, "user_agent", "ttseed/0.1"),
         rate_limit_per_sec=float(_get(tracker_raw, "rate_limit_per_sec", 1.0)),
+        sitemap_url=_get(tracker_raw, "sitemap_url", ""),
+        sitemap_backfill_enabled=bool(_get(tracker_raw, "sitemap_backfill_enabled", False)),
+        sitemap_backfill_force=bool(_get(tracker_raw, "sitemap_backfill_force", False)),
+        sitemap_backfill_limit=int(_get(tracker_raw, "sitemap_backfill_limit", 0)),
+        sitemap_topic_regex=[str(x) for x in _get(tracker_raw, "sitemap_topic_regex", [])],
         allow_forums=[str(x) for x in _get(tracker_raw, "allow_forums", [])],
         allow_tags=[str(x) for x in _get(tracker_raw, "allow_tags", [])],
         allow_regex_title=[str(x) for x in _get(tracker_raw, "allow_regex_title", [])],

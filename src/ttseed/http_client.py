@@ -31,22 +31,35 @@ class RobotsChecker:
         self.user_agent = user_agent
         self._parser: Optional[RobotFileParser] = None
 
-    def allowed(self, url: str) -> bool:
-        if self._parser is None:
-            robots_url = urljoin(self.base_url, "/robots.txt")
-            parser = RobotFileParser()
-            try:
-                resp = self.session.get(robots_url, timeout=10)
-                if resp.ok:
-                    parser.parse(resp.text.splitlines())
-                else:
-                    parser = RobotFileParser()
-                    parser.parse("")
-            except requests.RequestException:
-                parser = RobotFileParser()
+    def _load(self) -> RobotFileParser:
+        if self._parser is not None:
+            return self._parser
+        robots_url = urljoin(self.base_url, "/robots.txt")
+        parser = RobotFileParser()
+        try:
+            resp = self.session.get(robots_url, timeout=10)
+            if resp.ok:
+                parser.parse(resp.text.splitlines())
+            else:
                 parser.parse("")
-            self._parser = parser
-        return self._parser.can_fetch(self.user_agent, url)
+        except requests.RequestException:
+            parser.parse("")
+        self._parser = parser
+        return parser
+
+    def allowed(self, url: str) -> bool:
+        parser = self._load()
+        return parser.can_fetch(self.user_agent, url)
+
+    def crawl_delay(self) -> Optional[float]:
+        parser = self._load()
+        delay = parser.crawl_delay(self.user_agent)
+        if delay is None:
+            return None
+        try:
+            return float(delay)
+        except (TypeError, ValueError):
+            return None
 
 
 def build_session(retry_count: int) -> requests.Session:
