@@ -19,11 +19,13 @@ sudo chown -R porla:porla /var/lib/porla
 
 ## 3) Download + install Porla v0.41.0
 ```bash
-PORLA_VERSION=0.41.0
-PORLA_ASSET="REPLACE_WITH_REAL_FILENAME"
-curl -L -o /tmp/porla.tgz "https://github.com/porla/porla/releases/download/v${PORLA_VERSION}/${PORLA_ASSET}"
-sudo tar -xzf /tmp/porla.tgz -C /usr/local/bin
+# PORLA_VERSION=0.41.0
+# PORLA_ASSET="REPLACE_WITH_REAL_FILENAME"
+# curl -L -o /tmp/porla.tgz "https://github.com/porla/porla/releases/download/v${PORLA_VERSION}/${PORLA_ASSET}"
+# sudo tar -xzf /tmp/porla.tgz -C /usr/local/bin
+sudo curl  -L -o /usr/local/bin/porla "https://github.com/porla/porla/releases/download/v0.41.0/porla-linux-amd64"
 sudo chmod +x /usr/local/bin/porla
+
 ```
 
 ## 4) Configure Porla basic auth

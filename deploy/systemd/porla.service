@@ -5,12 +5,14 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/var/lib/porla
-ExecStart=/usr/local/bin/porla
+ExecStart=/usr/local/bin/porla --config-file /var/lib/porla/porla.toml --state-dir /var/lib/porla/state
 Restart=on-failure
 RestartSec=5
 EnvironmentFile=-/etc/porla/porla.env
 PrivateTmp=true
 NoNewPrivileges=true
+Group=porla
+User=porla
 
 [Install]
 WantedBy=multi-user.target
