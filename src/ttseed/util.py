@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, timezone
 from typing import Iterable, Optional
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(KB|MB|GB|TB)", re.IGNORECASE)
 MAGNET_RE = re.compile(r"magnet:\?xt=urn:btih:([a-fA-F0-9]{32,40})")
@@ -57,3 +57,22 @@ def any_regex_match(patterns: Iterable[str], text: str) -> bool:
         except re.error:
             continue
     return False
+
+
+def normalize_topic_url(url: str) -> str:
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return url
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    if "t" not in query:
+        if "sid" in query:
+            query.pop("sid", None)
+            new_query = urlencode({k: v for k, v in query.items()}, doseq=True)
+            return urlunparse(parsed._replace(query=new_query, fragment=""))
+        return urlunparse(parsed._replace(fragment=""))
+
+    new_query = {}
+    if "f" in query:
+        new_query["f"] = query["f"][0]
+    new_query["t"] = query["t"][0]
+    return urlunparse(parsed._replace(query=urlencode(new_query), fragment=""))

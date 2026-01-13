@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import gzip
 import html as html_lib
+import os
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import feedparser
 from dateutil import parser as date_parser
@@ -16,7 +17,14 @@ from ttseed.db import connect, get_meta, init_db, set_meta
 from ttseed.http_client import RateLimiter, RobotsChecker, build_session
 from ttseed.logging_setup import setup_logging
 from ttseed.porla_client import PorlaClient
-from ttseed.util import any_regex_match, extract_infohash, iso_now, parse_forum_id, parse_size
+from ttseed.util import (
+    any_regex_match,
+    extract_infohash,
+    iso_now,
+    normalize_topic_url,
+    parse_forum_id,
+    parse_size,
+)
 
 MAGNET_HREF_RE = re.compile(r"magnet:\?[^\"'\s]+", re.IGNORECASE)
 HREF_RE = re.compile(r"href=[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -152,17 +160,18 @@ def _maybe_decompress(url: str, resp) -> bytes:
     return content
 
 
-def _fetch_cached(conn, session, limiter, url: str):
+def _fetch_cached(conn, session, limiter, url: str, use_cache_headers: bool = True):
     headers: Dict[str, str] = {}
-    cache = conn.execute(
-        "SELECT etag, last_modified FROM http_cache WHERE url = ?",
-        (url,),
-    ).fetchone()
-    if cache:
-        if cache["etag"]:
-            headers["If-None-Match"] = cache["etag"]
-        if cache["last_modified"]:
-            headers["If-Modified-Since"] = cache["last_modified"]
+    if use_cache_headers:
+        cache = conn.execute(
+            "SELECT etag, last_modified FROM http_cache WHERE url = ?",
+            (url,),
+        ).fetchone()
+        if cache:
+            if cache["etag"]:
+                headers["If-None-Match"] = cache["etag"]
+            if cache["last_modified"]:
+                headers["If-Modified-Since"] = cache["last_modified"]
     limiter.wait()
     resp = session.get(url, headers=headers, timeout=20)
     if resp.status_code == 304:
@@ -182,8 +191,47 @@ def _fetch_cached(conn, session, limiter, url: str):
     return resp
 
 
+def _load_local_sitemap_bytes(sitemap_url: str) -> Optional[bytes]:
+    parsed = urlparse(sitemap_url)
+    if parsed.scheme == "file":
+        path = parsed.path
+    elif parsed.scheme == "":
+        path = sitemap_url
+    else:
+        return None
+    if not path:
+        return None
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as handle:
+        return handle.read()
+
+
 def _upsert_torrent(conn, topic_url: str, title: Optional[str], discovered_at: Optional[str]) -> tuple[int, bool]:
-    row = conn.execute("SELECT id, discovered_at FROM torrents WHERE topic_url = ?", (topic_url,)).fetchone()
+    normalized_url = normalize_topic_url(topic_url)
+    row = conn.execute(
+        "SELECT id, discovered_at FROM torrents WHERE topic_url = ?",
+        (normalized_url,),
+    ).fetchone()
+    if not row and normalized_url != topic_url:
+        row = conn.execute(
+            "SELECT id, discovered_at FROM torrents WHERE topic_url = ?",
+            (topic_url,),
+        ).fetchone()
+        if row:
+            existing_norm = conn.execute(
+                "SELECT id FROM torrents WHERE topic_url = ?",
+                (normalized_url,),
+            ).fetchone()
+            if not existing_norm:
+                conn.execute(
+                    "UPDATE torrents SET topic_url = ? WHERE id = ?",
+                    (normalized_url, row["id"]),
+                )
+                conn.commit()
+            topic_url = normalized_url
+    else:
+        topic_url = normalized_url
     if row:
         if title:
             conn.execute("UPDATE torrents SET title = ? WHERE id = ?", (title, row["id"]))
@@ -213,6 +261,7 @@ def _process_topic(
     entry: Optional[Dict],
     discovered_at: Optional[str] = None,
 ) -> bool:
+    topic_url = normalize_topic_url(topic_url)
     torrent_id, created = _upsert_torrent(conn, topic_url, title, discovered_at)
     row = conn.execute("SELECT * FROM torrents WHERE id = ?", (torrent_id,)).fetchone()
 
@@ -329,10 +378,23 @@ def _sitemap_backfill(cfg: Config, conn, session, limiter, robots, porla, logger
             logger.info("sitemap backfill already completed")
             return 0
 
-    queue = [tracker.sitemap_url]
+    queue = []
     seen = set()
     urls: list[Tuple[str, Optional[str]]] = []
     parsed_any = False
+
+    local_bytes = _load_local_sitemap_bytes(tracker.sitemap_url)
+    if local_bytes is not None:
+        try:
+            new_urls, nested = _parse_sitemap(local_bytes)
+        except ET.ParseError:
+            logger.warning("local sitemap parse failed %s", tracker.sitemap_url)
+        else:
+            parsed_any = True
+            urls.extend(new_urls)
+            queue.extend(nested)
+    else:
+        queue.append(tracker.sitemap_url)
 
     while queue:
         sitemap_url = queue.pop(0)
@@ -342,7 +404,7 @@ def _sitemap_backfill(cfg: Config, conn, session, limiter, robots, porla, logger
         if not robots.allowed(sitemap_url):
             logger.warning("robots disallow sitemap %s", sitemap_url)
             continue
-        resp = _fetch_cached(conn, session, limiter, sitemap_url)
+        resp = _fetch_cached(conn, session, limiter, sitemap_url, use_cache_headers=False)
         if resp is None:
             continue
         if not resp.ok:
@@ -362,6 +424,7 @@ def _sitemap_backfill(cfg: Config, conn, session, limiter, robots, porla, logger
     patterns = tracker.sitemap_topic_regex
     processed = 0
     for topic_url, lastmod in urls:
+        topic_url = normalize_topic_url(topic_url)
         if patterns and not any_regex_match(patterns, topic_url):
             continue
         if tracker.sitemap_backfill_limit and processed >= tracker.sitemap_backfill_limit:

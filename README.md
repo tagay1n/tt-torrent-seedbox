@@ -58,8 +58,10 @@ Enable once to seed the catalog from `sitemap.xml`:
 ```yaml
 tracker:
   sitemap_backfill_enabled: true
+  # Optional: use a local copy instead of fetching https://SITE/sitemap.xml
+  # sitemap_url: "sitemap.xml"
   sitemap_topic_regex:
-    - "^https?://[^/]+/viewtopic\\.php\\?f=\\d+&t=\\d+"
+    - "^https?://[^/]+/viewtopic\\.php\\?t=\\d+(?:&f=\\d+)?$"
   sitemap_backfill_limit: 0  # 0 = no limit
 ```
 After a successful run, the backfill is marked complete in the DB. To rerun, set
