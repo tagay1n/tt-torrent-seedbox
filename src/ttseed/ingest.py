@@ -90,7 +90,7 @@ def _extract_from_html(base_url: str, html: str) -> tuple[Optional[str], Optiona
         if href.startswith("magnet:"):
             magnet_url = href
             continue
-        if ".torrent" in href:
+        if ".torrent" in href or "download/file.php" in href:
             torrent_url = urljoin(base_url, href)
     return magnet_url, torrent_url, size_bytes
 
