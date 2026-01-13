@@ -1,0 +1,16 @@
+[Unit]
+Description=Porla torrent client
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/lib/porla
+ExecStart=/usr/local/bin/porla
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=-/etc/porla/porla.env
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

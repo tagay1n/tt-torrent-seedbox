@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="refresh" content="{{ auto_refresh }}" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <title>ttseed dashboard</title>
+</head>
+<body>
+  <header>
+    <h1>ttseed control room</h1>
+    <nav>
+      <a href="/" class="{% if active == 'overview' %}active{% endif %}">Overview</a>
+      <a href="/vulnerable" class="{% if active == 'vulnerable' %}active{% endif %}">Vulnerable</a>
+      <a href="/trackers" class="{% if active == 'trackers' %}active{% endif %}">Trackers</a>
+      <a href="/actions" class="{% if active == 'actions' %}active{% endif %}">Actions</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

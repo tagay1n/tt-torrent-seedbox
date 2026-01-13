@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Action</th>
+      <th>Reason</th>
+      <th>Title</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td class="row-muted">{{ row.created_at }}</td>
+      <td>{{ row.action }}</td>
+      <td>{{ row.reason }}</td>
+      <td>
+        {% if row.topic_url %}
+          <a href="{{ row.topic_url }}" target="_blank" rel="noreferrer">{{ row.title }}</a>
+        {% else %}
+          <span class="row-muted">(unknown)</span>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# Virtual env
+.venv/
+
+# Build artifacts
+build/
+dist/
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local config/data
+config.yaml
+pinned.txt
+/data/state.db
+/data/*.db
+
+# Logs
+*.log

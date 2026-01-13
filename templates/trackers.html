@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Tracker</th>
+      <th>Seeders</th>
+      <th>Leechers</th>
+      <th>Downloaded</th>
+      <th>Status</th>
+      <th>Last Scrape</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td><a href="{{ row.topic_url }}" target="_blank" rel="noreferrer">{{ row.title }}</a></td>
+      <td class="row-muted">{{ row.tracker_url }}</td>
+      <td>{{ row.scrape_complete }}</td>
+      <td>{{ row.scrape_incomplete }}</td>
+      <td>{{ row.scrape_downloaded }}</td>
+      <td>{{ row.scrape_status }}</td>
+      <td class="row-muted">{{ row.last_scrape_at }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

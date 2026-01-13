@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="cards">
+  <div class="card">
+    <h3>Total Torrents</h3>
+    <div class="value">{{ torrents_total }}</div>
+  </div>
+  <div class="card">
+    <h3>Critical Vulnerable</h3>
+    <div class="value">{{ critical }}</div>
+  </div>
+  <div class="card">
+    <h3>Disk Used</h3>
+    <div class="value">{{ (usage.used / (1024 ** 3)) | round(1) }} GB</div>
+  </div>
+  <div class="card">
+    <h3>Porla</h3>
+    <div class="value">
+      {% if porla_ok %}<span class="badge ok">online</span>{% else %}<span class="badge">offline</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<h2>Run Status</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Run Type</th>
+      <th>Last Finished</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in last_runs %}
+    <tr>
+      <td>{{ row.run_type }}</td>
+      <td>{{ row.finished_at }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Counts by Status</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Status</th>
+      <th>Count</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in status_counts %}
+    <tr>
+      <td>{{ row.status }}</td>
+      <td>{{ row.c }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

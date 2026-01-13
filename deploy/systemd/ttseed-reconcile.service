@@ -1,0 +1,11 @@
+[Unit]
+Description=ttseed reconcile
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/ttseed
+ExecStart=/opt/ttseed/.venv/bin/ttseed-reconcile --config /opt/ttseed/config.yaml
+Environment=PYTHONUNBUFFERED=1
+PrivateTmp=true
+NoNewPrivileges=true

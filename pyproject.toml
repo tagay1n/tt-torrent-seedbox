@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ttseed"
+version = "0.1.0"
+description = "Policy engine for Porla-managed archival seeding"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "ttseed"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+  "fastapi>=0.111",
+  "uvicorn>=0.29",
+  "jinja2>=3.1",
+  "requests>=2.31",
+  "feedparser>=6.0",
+  "pyyaml>=6.0",
+  "python-dateutil>=2.9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+ttseed-ingest = "ttseed.cli:main_ingest"
+ttseed-stats = "ttseed.cli:main_stats"
+ttseed-reconcile = "ttseed.cli:main_reconcile"
+ttseed-dashboard = "ttseed.cli:main_dashboard"
+ttseed-initdb = "ttseed.cli:main_initdb"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+lint.select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

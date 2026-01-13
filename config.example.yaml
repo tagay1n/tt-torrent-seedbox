@@ -1,0 +1,40 @@
+tracker:
+  base_url: "https://SITE"
+  feed_url: "https://SITE/feed.php"
+  user_agent: "ttseed/0.1 (+https://SITE)"
+  rate_limit_per_sec: 1
+  allow_forums: []
+  allow_tags: []
+  allow_regex_title: []
+  html_parse_enabled: false
+  topic_cache_ttl_minutes: 720
+
+porla:
+  base_url: "http://127.0.0.1:1337"
+  auth:
+    type: "token"  # token|basic|none
+    token: "REPLACE_ME"
+    username: ""
+    password: ""
+  managed_tag: "tt-archive"
+  endpoints:
+    health: "/api/v1/health"
+    torrents: "/api/v1/torrents"
+    trackers: "/api/v1/torrents/{id}/trackers"
+  request_timeout_seconds: 15
+  retry_count: 3
+
+policy:
+  max_total_bytes: 900000000000
+  max_torrents: 50000
+  allow_delete_data: true
+  pinned_list_path: "pinned.txt"
+  never_delete_if_pinned: true
+
+storage:
+  db_path: "data/state.db"
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+  auto_refresh_seconds: 60
