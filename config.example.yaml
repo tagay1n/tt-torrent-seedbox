@@ -8,7 +8,7 @@ tracker:
   sitemap_backfill_force: false
   sitemap_backfill_limit: 0
   sitemap_topic_regex:
-    - "^https?://[^/]+/viewtopic\\.php\\?t=\\d+(?:&f=\\d+)?$"
+    - "^https?://[^/]+/viewtopic\\.php\\?(?:f=\\d+&t=\\d+|t=\\d+)$"
   login_enabled: false
   login_url: "https://SITE/ucp.php?mode=login"
   login_username: ""

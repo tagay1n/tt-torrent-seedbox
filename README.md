@@ -76,7 +76,7 @@ tracker:
   # Optional: use a local copy instead of fetching https://SITE/sitemap.xml
   # sitemap_url: "sitemap.xml"
   sitemap_topic_regex:
-    - "^https?://[^/]+/viewtopic\\.php\\?t=\\d+(?:&f=\\d+)?$"
+    - "^https?://[^/]+/viewtopic\\.php\\?(?:f=\\d+&t=\\d+|t=\\d+)$"
   sitemap_backfill_limit: 0  # 0 = no limit
 ```
 After a successful run, the backfill is marked complete in the DB. To rerun, set

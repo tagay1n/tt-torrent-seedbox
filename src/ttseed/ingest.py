@@ -482,12 +482,15 @@ def _sitemap_backfill(cfg: Config, conn, session, limiter, robots, porla, logger
         urls.extend(new_urls)
 
     added = 0
+    matched = 0
     patterns = tracker.sitemap_topic_regex
     processed = 0
+    logger.info("sitemap urls discovered=%s", len(urls))
     for topic_url, lastmod in urls:
         topic_url = normalize_topic_url(topic_url)
         if patterns and not any_regex_match(patterns, topic_url):
             continue
+        matched += 1
         if tracker.sitemap_backfill_limit and processed >= tracker.sitemap_backfill_limit:
             break
         created = _process_topic(
@@ -508,7 +511,13 @@ def _sitemap_backfill(cfg: Config, conn, session, limiter, robots, porla, logger
 
     if parsed_any:
         set_meta(conn, "sitemap_backfill_done", iso_now())
-        logger.info("sitemap backfill completed added=%s", added)
+        logger.info(
+            "sitemap backfill completed total=%s matched=%s processed=%s added=%s",
+            len(urls),
+            matched,
+            processed,
+            added,
+        )
     else:
         logger.warning("sitemap backfill did not parse any urls")
     return added
