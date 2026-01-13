@@ -23,6 +23,12 @@ class TrackerConfig:
     sitemap_backfill_force: bool = False
     sitemap_backfill_limit: int = 0
     sitemap_topic_regex: List[str] = field(default_factory=list)
+    login_enabled: bool = False
+    login_url: str = ""
+    login_username: str = ""
+    login_password: str = ""
+    login_cookie_prefix: str = "phpbb"
+    login_extra: Dict[str, str] = field(default_factory=dict)
     allow_forums: List[str] = field(default_factory=list)
     allow_tags: List[str] = field(default_factory=list)
     allow_regex_title: List[str] = field(default_factory=list)
@@ -106,6 +112,12 @@ def load_config(path: str) -> Config:
         sitemap_backfill_force=bool(_get(tracker_raw, "sitemap_backfill_force", False)),
         sitemap_backfill_limit=int(_get(tracker_raw, "sitemap_backfill_limit", 0)),
         sitemap_topic_regex=[str(x) for x in _get(tracker_raw, "sitemap_topic_regex", [])],
+        login_enabled=bool(_get(tracker_raw, "login_enabled", False)),
+        login_url=_get(tracker_raw, "login_url", ""),
+        login_username=_get(tracker_raw, "login_username", ""),
+        login_password=_get(tracker_raw, "login_password", ""),
+        login_cookie_prefix=_get(tracker_raw, "login_cookie_prefix", "phpbb"),
+        login_extra={str(k): str(v) for k, v in _get(tracker_raw, "login_extra", {}).items()},
         allow_forums=[str(x) for x in _get(tracker_raw, "allow_forums", [])],
         allow_tags=[str(x) for x in _get(tracker_raw, "allow_tags", [])],
         allow_regex_title=[str(x) for x in _get(tracker_raw, "allow_regex_title", [])],

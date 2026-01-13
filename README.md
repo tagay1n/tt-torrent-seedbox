@@ -43,6 +43,7 @@ Edit `config.yaml`. Key settings:
 - `tracker.sitemap_topic_regex` (regex filter for topic URLs)
 - `tracker.allow_forums`, `tracker.allow_tags`, `tracker.allow_regex_title`
 - `tracker.html_parse_enabled` (default false)
+- `tracker.login_enabled`, `tracker.login_url`, `tracker.login_username`, `tracker.login_password`
 - `porla.base_url`, `porla.auth`, `porla.managed_tag`
 - `porla.endpoints` (override if Porla API differs)
 - `policy.max_total_bytes`, `policy.max_torrents`
@@ -52,6 +53,20 @@ Edit `config.yaml`. Key settings:
 Pinned torrents live in `pinned.txt` by default. Accepts topic URLs, infohashes, or Porla IDs (one per line).
 
 Tip: if the tracker’s `robots.txt` specifies `Crawl-delay`, ttseed will honor it by slowing requests below `rate_limit_per_sec`.
+
+## Authenticated topic fetch (login)
+If topic pages hide magnet/torrent links behind login, enable tracker login:
+```yaml
+tracker:
+  login_enabled: true
+  login_url: "https://SITE/ucp.php?mode=login"
+  login_username: "YOUR_USER"
+  login_password: "YOUR_PASS"
+  login_cookie_prefix: "phpbb"
+  login_extra:
+    autologin: "on"
+```
+ttseed will fetch the login page, submit the form, and keep cookies in the same session for topic fetches.
 
 ## Sitemap backfill (initial ingest)
 Enable once to seed the catalog from `sitemap.xml`:

@@ -28,6 +28,9 @@ from ttseed.util import (
 
 MAGNET_HREF_RE = re.compile(r"magnet:\?[^\"'\s]+", re.IGNORECASE)
 HREF_RE = re.compile(r"href=[\"']([^\"']+)[\"']", re.IGNORECASE)
+INPUT_RE = re.compile(r"<input[^>]+>", re.IGNORECASE)
+NAME_RE = re.compile(r"name=[\"']?([^\"'\s>]+)", re.IGNORECASE)
+VALUE_RE = re.compile(r"value=[\"']?([^\"'>]*)", re.IGNORECASE)
 
 
 def _entry_tags(entry: Dict) -> list[str]:
@@ -90,6 +93,64 @@ def _extract_from_html(base_url: str, html: str) -> tuple[Optional[str], Optiona
         if ".torrent" in href:
             torrent_url = urljoin(base_url, href)
     return magnet_url, torrent_url, size_bytes
+
+
+def _build_login_payload(html: str, username: str, password: str, extra: Dict[str, str]) -> Dict[str, str]:
+    payload: Dict[str, str] = {}
+    for input_tag in INPUT_RE.findall(html):
+        name_match = NAME_RE.search(input_tag)
+        if not name_match:
+            continue
+        name = name_match.group(1)
+        value_match = VALUE_RE.search(input_tag)
+        value = value_match.group(1) if value_match else ""
+        payload[name] = value
+
+    payload["username"] = username
+    payload["password"] = password
+    for key, value in extra.items():
+        payload[key] = value
+    return payload
+
+
+def _login_if_needed(cfg: Config, session, limiter: RateLimiter, robots: RobotsChecker, logger) -> bool:
+    tracker = cfg.tracker
+    if not tracker.login_enabled:
+        return False
+    if not tracker.login_username or not tracker.login_password:
+        logger.warning("login enabled but username/password missing")
+        return False
+
+    login_url = tracker.login_url or urljoin(tracker.base_url, "/ucp.php?mode=login")
+    parsed = urlparse(login_url)
+    if not parsed.scheme or login_url.startswith("/"):
+        login_url = urljoin(tracker.base_url, login_url)
+    if not robots.allowed(login_url):
+        logger.warning("robots disallow login url %s", login_url)
+        return False
+
+    limiter.wait()
+    resp = session.get(login_url, timeout=20)
+    if not resp.ok:
+        logger.warning("login page fetch failed status=%s", resp.status_code)
+        return False
+
+    payload = _build_login_payload(
+        resp.text, tracker.login_username, tracker.login_password, tracker.login_extra
+    )
+    limiter.wait()
+    post = session.post(login_url, data=payload, timeout=20)
+    if not post.ok:
+        logger.warning("login post failed status=%s", post.status_code)
+
+    prefix = (tracker.login_cookie_prefix or "").lower()
+    if prefix:
+        for cookie in session.cookies:
+            if cookie.name.lower().startswith(prefix):
+                logger.info("login ok")
+                return True
+    logger.warning("login may have failed (no expected cookies)")
+    return False
 
 
 def _extract_title_from_html(html: str) -> Optional[str]:
@@ -473,6 +534,7 @@ def run(config_path: str) -> None:
     started_at = iso_now()
     new_count = 0
     skipped_count = 0
+    _login_if_needed(cfg, session, limiter, robots, logger)
     sitemap_added = _sitemap_backfill(cfg, conn, session, limiter, robots, porla, logger)
 
     feed_headers = {}

@@ -9,6 +9,13 @@ tracker:
   sitemap_backfill_limit: 0
   sitemap_topic_regex:
     - "^https?://[^/]+/viewtopic\\.php\\?t=\\d+(?:&f=\\d+)?$"
+  login_enabled: false
+  login_url: "https://SITE/ucp.php?mode=login"
+  login_username: ""
+  login_password: ""
+  login_cookie_prefix: "phpbb"
+  login_extra:
+    autologin: "on"
   allow_forums: []
   allow_tags: []
   allow_regex_title: []
