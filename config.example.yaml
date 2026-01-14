@@ -5,7 +5,7 @@ tracker:
   rate_limit_per_sec: 1
   sitemap_url: "https://SITE/sitemap.xml"
   sitemap_backfill_enabled: true
-  sitemap_backfill_force: false
+  sitemap_backfill_force: true
   sitemap_backfill_limit: 0
   sitemap_topic_regex:
     - "^https?://[^/]+/viewtopic\\.php\\?(?:f=\\d+&t=\\d+|t=\\d+)$"
@@ -24,16 +24,13 @@ tracker:
 
 porla:
   base_url: "http://127.0.0.1:1337"
-  auth:
-    type: "token"  # token|basic|none
-    token: "REPLACE_ME"
-    username: ""
-    password: ""
+  token: "REPLACE_ME"
   managed_tag: "tt-archive"
-  endpoints:
-    health: "/api/v1/health"
-    torrents: "/api/v1/torrents"
-    trackers: "/api/v1/torrents/{id}/trackers"
+  jsonrpc_url: "/api/v1/jsonrpc"
+  tag_mode: "db"  # porla|db
+  add_preset: ""
+  add_save_path: ""
+  add_params: {}
   request_timeout_seconds: 15
   retry_count: 3
 

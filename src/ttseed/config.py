@@ -37,22 +37,17 @@ class TrackerConfig:
 
 
 @dataclass
-class PorlaAuth:
-    type: str = "none"
-    token: str = ""
-    username: str = ""
-    password: str = ""
-
-
-@dataclass
 class PorlaConfig:
     base_url: str
-    auth: PorlaAuth
+    token: str
     managed_tag: str = "tt-archive"
     request_timeout_seconds: int = 15
     retry_count: int = 3
-    page_size: int = 200
-    endpoints: Dict[str, str] = field(default_factory=dict)
+    jsonrpc_url: str = "/api/v1/jsonrpc"
+    tag_mode: str = "porla"  # porla|db
+    add_preset: str = ""
+    add_save_path: str = ""
+    add_params: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -83,13 +78,6 @@ class Config:
     policy: PolicyConfig
     storage: StorageConfig
     server: ServerConfig
-
-
-DEFAULT_PORLA_ENDPOINTS = {
-    "health": "/api/v1/health",
-    "torrents": "/api/v1/torrents",
-    "trackers": "/api/v1/torrents/{id}/trackers",
-}
 
 
 def load_config(path: str) -> Config:
@@ -125,20 +113,17 @@ def load_config(path: str) -> Config:
         topic_cache_ttl_minutes=int(_get(tracker_raw, "topic_cache_ttl_minutes", 720)),
     )
 
-    auth_raw = porla_raw.get("auth", {})
     porla = PorlaConfig(
         base_url=_get(porla_raw, "base_url", ""),
-        auth=PorlaAuth(
-            type=_get(auth_raw, "type", "none"),
-            token=_get(auth_raw, "token", ""),
-            username=_get(auth_raw, "username", ""),
-            password=_get(auth_raw, "password", ""),
-        ),
+        token=_get(porla_raw, "token", ""),
         managed_tag=_get(porla_raw, "managed_tag", "tt-archive"),
         request_timeout_seconds=int(_get(porla_raw, "request_timeout_seconds", 15)),
         retry_count=int(_get(porla_raw, "retry_count", 3)),
-        page_size=int(_get(porla_raw, "page_size", 200)),
-        endpoints={**DEFAULT_PORLA_ENDPOINTS, **_get(porla_raw, "endpoints", {})},
+        jsonrpc_url=_get(porla_raw, "jsonrpc_url", "/api/v1/jsonrpc"),
+        tag_mode=_get(porla_raw, "tag_mode", "porla"),
+        add_preset=_get(porla_raw, "add_preset", ""),
+        add_save_path=_get(porla_raw, "add_save_path", ""),
+        add_params={str(k): v for k, v in _get(porla_raw, "add_params", {}).items()},
     )
 
     policy = PolicyConfig(

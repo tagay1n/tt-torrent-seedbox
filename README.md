@@ -44,8 +44,9 @@ Edit `config.yaml`. Key settings:
 - `tracker.allow_forums`, `tracker.allow_tags`, `tracker.allow_regex_title`
 - `tracker.html_parse_enabled` (default false)
 - `tracker.login_enabled`, `tracker.login_url`, `tracker.login_username`, `tracker.login_password`
-- `porla.base_url`, `porla.auth`, `porla.managed_tag`
-- `porla.endpoints` (override if Porla API differs)
+- `porla.base_url`, `porla.token`, `porla.managed_tag`
+- `porla.jsonrpc_url`
+- `porla.add_preset`, `porla.add_save_path`, `porla.add_params` (JSON-RPC add options)
 - `policy.max_total_bytes`, `policy.max_torrents`
 - `policy.allow_delete_data`, `policy.pinned_list_path`
 - `storage.db_path`
@@ -83,15 +84,16 @@ After a successful run, the backfill is marked complete in the DB. To rerun, set
 `tracker.sitemap_backfill_force: true` or delete the meta key `sitemap_backfill_done`.
 
 ## Porla API notes
-The client expects endpoints similar to:
-- `GET /api/v1/health`
-- `GET /api/v1/torrents?tag=TAG&page=1&pageSize=200`
-- `POST /api/v1/torrents` with `magnetUrl` or `torrentUrl`
-- `GET /api/v1/torrents/{id}`
-- `GET /api/v1/torrents/{id}/trackers`
-- `DELETE /api/v1/torrents/{id}?deleteData=true`
+ttseed calls JSON-RPC methods:
+- `sys.versions` (health)
+- `torrents.add` (magnet or torrent file)
+- `torrents.list`
+- `torrents.trackers.list`
+- `torrents.remove`
 
-If your Porla API differs, adjust `porla.endpoints` and field names in `src/ttseed/porla_client.py`.
+If `torrents.add` requires a preset or save path, set `porla.add_preset` or
+`porla.add_save_path` in `config.yaml`.
+If tags are not supported by JSON-RPC, set `porla.tag_mode: "db"` to avoid touching non-managed torrents.
 
 ## Systemd install
 ```bash

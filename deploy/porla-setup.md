@@ -1,4 +1,4 @@
-# Porla setup (Ubuntu 22.04, v0.41.0, basic auth)
+# Porla setup (Ubuntu 22.04, v0.41.0, JWT auth)
 
 ## 1) Determine architecture
 ```bash
@@ -28,8 +28,8 @@ sudo chmod +x /usr/local/bin/porla
 
 ```
 
-## 4) Configure Porla basic auth
-Set Porla API bind address to `127.0.0.1:1337` and enable basic auth.
+## 4) Configure Porla JWT auth
+Set Porla API bind address to `127.0.0.1:1337` and enable JWT auth.
 
 If Porla uses a config file, place it under `/var/lib/porla/config/` and update `deploy/systemd/porla.service` `ExecStart` to point at it. If it supports env vars, populate `/etc/porla/porla.env` and keep the `EnvironmentFile` line in the unit.
 
@@ -44,13 +44,13 @@ Update `config.yaml`:
 ```yaml
 porla:
   base_url: "http://127.0.0.1:1337"
-  auth:
-    type: "basic"
-    username: "YOUR_USER"
-    password: "YOUR_PASS"
+  token: "YOUR_JWT_TOKEN"
 ```
 
 ## 7) Quick health check
 ```bash
-curl -f http://127.0.0.1:1337/api/v1/health
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "jsonrpc": "2.0", "method": "sys.versions", "params": {}, "id": 1 }' \
+  http://127.0.0.1:1337/api/v1/jsonrpc
 ```

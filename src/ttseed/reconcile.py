@@ -115,6 +115,7 @@ def run(config_path: str) -> None:
 
     managed = porla.list_torrents(cfg.porla.managed_tag)
     managed_by_id = {t.id: t for t in managed}
+    use_db_managed = porla.tag_mode != "porla" or not managed_by_id
 
     for row in rows:
         if row["id"] in keep_ids:
@@ -137,7 +138,7 @@ def run(config_path: str) -> None:
                 else:
                     ok = False
                     record_action(conn, row["id"], "error", "porla add failed", iso_now())
-            elif row["porla_torrent_id"] not in managed_by_id:
+            elif not use_db_managed and row["porla_torrent_id"] not in managed_by_id:
                 added_torrent = porla.add_torrent(
                     row["magnet_url"], row["torrent_url"], cfg.porla.managed_tag
                 )
@@ -152,35 +153,82 @@ def run(config_path: str) -> None:
                 else:
                     ok = False
                     record_action(conn, row["id"], "error", "porla re-add failed", iso_now())
+            elif use_db_managed:
+                existing = porla.get_torrent(row["porla_torrent_id"])
+                if not existing:
+                    added_torrent = porla.add_torrent(
+                        row["magnet_url"], row["torrent_url"], cfg.porla.managed_tag
+                    )
+                    if added_torrent:
+                        conn.execute(
+                            "UPDATE torrents SET porla_torrent_id = ?, porla_name = ?, added_to_porla_at = ?, status = ? WHERE id = ?",
+                            (added_torrent.id, added_torrent.name, iso_now(), "queued", row["id"]),
+                        )
+                        conn.commit()
+                        record_action(conn, row["id"], "add", "re-added to porla", iso_now())
+                        added += 1
+                    else:
+                        ok = False
+                        record_action(conn, row["id"], "error", "porla re-add failed", iso_now())
 
-    for torrent in managed:
-        row = conn.execute(
-            "SELECT * FROM torrents WHERE porla_torrent_id = ?",
-            (torrent.id,),
-        ).fetchone()
-        if row and row["id"] in keep_ids:
-            continue
-        if row and cfg.policy.never_delete_if_pinned and _is_pinned(row, pinned):
-            record_action(conn, row["id"], "skip", "pinned", iso_now())
-            skipped += 1
-            continue
-        if _is_active(torrent.state):
-            record_action(conn, row["id"] if row else None, "skip", "active download", iso_now())
-            skipped += 1
-            continue
-        removed_ok = porla.remove_torrent(torrent.id, cfg.policy.allow_delete_data)
-        if removed_ok:
-            removed += 1
-            record_action(conn, row["id"] if row else None, "remove", "not in keep set", iso_now())
-            if row:
+    if use_db_managed:
+        managed_rows = [row for row in rows if row["porla_torrent_id"]]
+        for row in managed_rows:
+            if row["id"] in keep_ids:
+                continue
+            if cfg.policy.never_delete_if_pinned and _is_pinned(row, pinned):
+                record_action(conn, row["id"], "skip", "pinned", iso_now())
+                skipped += 1
+                continue
+            state = row["status"] or ""
+            torrent = porla.get_torrent(row["porla_torrent_id"])
+            if torrent:
+                state = torrent.state or state
+            if _is_active(state):
+                record_action(conn, row["id"], "skip", "active download", iso_now())
+                skipped += 1
+                continue
+            removed_ok = porla.remove_torrent(row["porla_torrent_id"], cfg.policy.allow_delete_data)
+            if removed_ok:
+                removed += 1
+                record_action(conn, row["id"], "remove", "not in keep set", iso_now())
                 conn.execute(
                     "UPDATE torrents SET status = ?, porla_torrent_id = NULL WHERE id = ?",
                     ("removed", row["id"]),
                 )
                 conn.commit()
-        else:
-            ok = False
-            record_action(conn, row["id"] if row else None, "error", "porla remove failed", iso_now())
+            else:
+                ok = False
+                record_action(conn, row["id"], "error", "porla remove failed", iso_now())
+    else:
+        for torrent in managed:
+            row = conn.execute(
+                "SELECT * FROM torrents WHERE porla_torrent_id = ?",
+                (torrent.id,),
+            ).fetchone()
+            if row and row["id"] in keep_ids:
+                continue
+            if row and cfg.policy.never_delete_if_pinned and _is_pinned(row, pinned):
+                record_action(conn, row["id"], "skip", "pinned", iso_now())
+                skipped += 1
+                continue
+            if _is_active(torrent.state):
+                record_action(conn, row["id"] if row else None, "skip", "active download", iso_now())
+                skipped += 1
+                continue
+            removed_ok = porla.remove_torrent(torrent.id, cfg.policy.allow_delete_data)
+            if removed_ok:
+                removed += 1
+                record_action(conn, row["id"] if row else None, "remove", "not in keep set", iso_now())
+                if row:
+                    conn.execute(
+                        "UPDATE torrents SET status = ?, porla_torrent_id = NULL WHERE id = ?",
+                        ("removed", row["id"]),
+                    )
+                    conn.commit()
+            else:
+                ok = False
+                record_action(conn, row["id"] if row else None, "error", "porla remove failed", iso_now())
 
     set_meta(conn, "last_reconcile_at", iso_now())
     summary = f"added={added} removed={removed} skipped={skipped} keep={len(keep_ids)} bytes={total_bytes}"
