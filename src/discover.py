@@ -109,9 +109,10 @@ def _parse_topic(config, session, topic_name, topic_path, limiter):
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, features="html.parser")
 
-    torrent_download_link = soup.find("a", string="Торрентны йөкләргә")["href"]
-    if not torrent_download_link:
-        raise ValueError(f"Could not parse torrent download link from topic '{topic_path}'")
+    torrent_download_link_a = soup.find("a", string="Торрентны йөкләргә")
+    if not torrent_download_link_a or not (torrent_download_link := torrent_download_link_a["href"]):
+        logger.warning(f"Topic {topic_name}({topic_path}) does not have torrent url")
+        return None
 
     torrent = Torrent()
     torrent.topic_url = normalize_topic_url(url)
