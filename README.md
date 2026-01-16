@@ -126,7 +126,7 @@ make logs UNIT=ttseed-ingest.service
 ```
 
 ## Database
-SQLite DB lives at `data/state.db` by default. Tables:
+SQLite DB (via SQLAlchemy ORM) lives at `data/state.db` by default. Tables:
 - `torrents`
 - `tracker_endpoints`
 - `runs`

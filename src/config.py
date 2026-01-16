@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
 
-def _get(d: Dict[str, Any], key: str, default: Any) -> Any:
+def _get(d: dict[str, Any], key: str, default: Any) -> Any:
     if key not in d or d[key] is None:
         return default
     return d[key]
@@ -22,16 +20,16 @@ class TrackerConfig:
     sitemap_backfill_enabled: bool = False
     sitemap_backfill_force: bool = False
     sitemap_backfill_limit: int = 0
-    sitemap_topic_regex: List[str] = field(default_factory=list)
+    sitemap_topic_regex: list[str] = field(default_factory=list)
     login_enabled: bool = False
     login_url: str = ""
     login_username: str = ""
     login_password: str = ""
     login_cookie_prefix: str = "phpbb"
-    login_extra: Dict[str, str] = field(default_factory=dict)
-    allow_forums: List[str] = field(default_factory=list)
-    allow_tags: List[str] = field(default_factory=list)
-    allow_regex_title: List[str] = field(default_factory=list)
+    login_extra: dict[str, str] = field(default_factory=dict)
+    allow_forums: list[str] = field(default_factory=list)
+    allow_tags: list[str] = field(default_factory=list)
+    allow_regex_title: list[str] = field(default_factory=list)
     html_parse_enabled: bool = False
     topic_cache_ttl_minutes: int = 720
 
@@ -47,7 +45,7 @@ class PorlaConfig:
     tag_mode: str = "porla"  # porla|db
     add_preset: str = ""
     add_save_path: str = ""
-    add_params: Dict[str, Any] = field(default_factory=dict)
+    add_params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -81,7 +79,7 @@ class Config:
 
 
 def load_config(path: str) -> Config:
-    with open(path, "r", encoding="utf-8") as handle:
+    with open(path, encoding="utf-8") as handle:
         raw = yaml.safe_load(handle) or {}
 
     tracker_raw = raw.get("tracker", {})

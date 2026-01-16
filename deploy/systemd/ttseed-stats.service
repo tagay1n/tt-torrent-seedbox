@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/ttseed
-ExecStart=/opt/ttseed/.venv/bin/ttseed-stats --config /opt/ttseed/config.yaml
+ExecStart=/opt/ttseed/.venv/bin/python /opt/ttseed/src/main.py stats --config /opt/ttseed/config.yaml
 Environment=PYTHONUNBUFFERED=1
 PrivateTmp=true
 NoNewPrivileges=true

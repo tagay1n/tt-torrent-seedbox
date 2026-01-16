@@ -15,23 +15,11 @@ deps: venv
 
 # Initialize the SQLite schema (data/state.db)
 initdb:
-	$(VENV)/bin/ttseed-initdb --config config.yaml
+	$(VENV)/bin/python src/main.py initdb --config config.yaml
 
 # Run feed ingest once
 run-ingest:
-	$(VENV)/bin/ttseed-ingest --config config.yaml
-
-# Run stats updater once
-run-stats:
-	$(VENV)/bin/ttseed-stats --config config.yaml
-
-# Run reconcile loop once
-run-reconcile:
-	$(VENV)/bin/ttseed-reconcile --config config.yaml
-
-# Start the FastAPI dashboard locally
-run-dashboard:
-	$(VENV)/bin/ttseed-dashboard --config config.yaml
+	$(VENV)/bin/python src/main.py ingest --config config.yaml
 
 # Install ttseed into /opt/ttseed and enable systemd units/timers
 install-systemd:
@@ -76,12 +64,8 @@ logs:
 
 # Auto-format Python with ruff
 fmt:
-	$(VENV)/bin/ruff format src tests
+	$(VENV)/bin/ruff format src
 
 # Lint Python with ruff
 lint:
-	$(VENV)/bin/ruff check src tests
-
-# Run pytest
-test:
-	$(VENV)/bin/pytest
+	$(VENV)/bin/ruff check src

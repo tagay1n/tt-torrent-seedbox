@@ -16,6 +16,7 @@ classifiers = [
 ]
 
 dependencies = [
+  "typer",
   "fastapi>=0.111",
   "uvicorn>=0.29",
   "jinja2>=3.1",
@@ -23,6 +24,8 @@ dependencies = [
   "feedparser>=6.0",
   "pyyaml>=6.0",
   "python-dateutil>=2.9",
+  "sqlalchemy>=2.0",
+  "beautifulsoup4"
 ]
 
 [project.optional-dependencies]
@@ -32,17 +35,27 @@ dev = [
 ]
 
 [project.scripts]
-ttseed-ingest = "ttseed.cli:main_ingest"
-ttseed-stats = "ttseed.cli:main_stats"
-ttseed-reconcile = "ttseed.cli:main_reconcile"
-ttseed-dashboard = "ttseed.cli:main_dashboard"
-ttseed-initdb = "ttseed.cli:main_initdb"
+ttseed-ingest = "cli:ingest_cmd"
+ttseed-stats = "cli:stats_cmd"
+ttseed-reconcile = "cli:reconcile_cmd"
+ttseed-dashboard = "cli:dashboard_cmd"
+ttseed-initdb = "cli:initdb_cmd"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
+py-modules = [
+  "cli",
+  "config",
+  "dashboard",
+  "db",
+  "http_client",
+  "ingest",
+  "porla_client",
+  "reconcile",
+  "scoring",
+  "stats",
+  "util",
+]
 
 [tool.ruff]
 line-length = 100

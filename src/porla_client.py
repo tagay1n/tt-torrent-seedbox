@@ -1,41 +1,49 @@
-from __future__ import annotations
-
 import base64
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
 
-from ttseed.config import PorlaConfig
+from config import PorlaConfig
+from util import setup_logging
+
+logger = setup_logging()
 
 
 @dataclass
 class PorlaTorrent:
+    """Normalized Porla torrent data for internal use."""
+
     id: str
     name: str
     state: str
-    infohash: Optional[str]
-    size_bytes: Optional[int]
-    tags: List[str] = field(default_factory=list)
+    infohash: str | None
+    size_bytes: int | None
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
 class TrackerStat:
+    """Tracker scrape stats for a single tracker endpoint."""
+
     tracker_url: str
-    scrape_complete: Optional[int]
-    scrape_incomplete: Optional[int]
-    scrape_downloaded: Optional[int]
+    scrape_complete: int | None
+    scrape_incomplete: int | None
+    scrape_downloaded: int | None
     scrape_status: str
 
 
 class PorlaClient:
+    """JSON-RPC client wrapper for Porla API."""
+
     def __init__(self, config: PorlaConfig, session: requests.Session) -> None:
         self.config = config
         self.session = session
         self.tag_mode = (config.tag_mode or "porla").lower()
 
-    def _headers(self) -> Dict[str, str]:
+    def _headers(self) -> dict[str, str]:
         if self.config.token:
             return {"Authorization": f"Bearer {self.config.token}"}
         return {}
@@ -49,45 +57,27 @@ class PorlaClient:
 
     def add_torrent(
         self,
-        magnet_url: Optional[str],
-        torrent_url: Optional[str],
-        tag: str,
-    ) -> Optional[PorlaTorrent]:
-        params: Dict[str, Any] = {**self.config.add_params}
+        title,
+        torrent_url: str | None,
+    ) -> PorlaTorrent | None:
+        params: dict[str, Any] = {**self.config.add_params}
         if self.config.add_preset:
             params.setdefault("preset", self.config.add_preset)
         if self.config.add_save_path:
             params.setdefault("save_path", self.config.add_save_path)
-        if magnet_url:
-            params["magnet_uri"] = magnet_url
-        elif torrent_url:
-            torrent_bytes = self._fetch_torrent_bytes(torrent_url)
-            if not torrent_bytes:
-                return None
-            params["ti"] = base64.b64encode(torrent_bytes).decode("ascii")
-        else:
-            return None
-        result = self._rpc_call("torrents.add", params)
-        info_hash = None
-        if isinstance(result, dict):
-            info_hash = _first(result, ["info_hash", "infoHash", "hash"])
-            if isinstance(result.get("info_hash"), list):
-                for item in result.get("info_hash"):
-                    if item:
-                        info_hash = item
-                        break
-        if not info_hash:
-            return None
-        return PorlaTorrent(
-            id=str(info_hash),
-            name="",
-            state="queued",
-            infohash=str(info_hash),
-            size_bytes=None,
-            tags=[tag] if tag else [],
-        )
+        torrent_bytes = self._fetch_torrent_bytes(torrent_url)
+        params["ti"] = base64.b64encode(torrent_bytes).decode("ascii")
+        params["name"] = title
 
-    def list_torrents(self, tag: str) -> List[PorlaTorrent]:
+        result = self._rpc_call("torrents.add", params)
+        if error := result.get("error"):
+            if error["code"] == -3:
+                logger.warning("Torrent already in porla session")
+                return None
+            raise ValueError(f"Got error on adding torrent: {error}")
+        return next(i for i in result["result"]["info_hash"] if i)
+
+    def list_torrents(self, tag: str) -> list[PorlaTorrent]:
         result = self._rpc_call("torrents.list", {})
         items = _rpc_items(result)
         torrents = [self._to_torrent(item) for item in items if item]
@@ -99,7 +89,7 @@ class PorlaClient:
                 return []
         return torrents
 
-    def get_torrent(self, torrent_id: str) -> Optional[PorlaTorrent]:
+    def get_torrent(self, torrent_id: str) -> PorlaTorrent | None:
         result = self._rpc_call("torrents.list", {})
         items = _rpc_items(result)
         for item in items:
@@ -108,17 +98,23 @@ class PorlaClient:
                 return torrent
         return None
 
-    def get_trackers(self, torrent_id: str) -> List[TrackerStat]:
+    def get_trackers(self, torrent_id: str) -> list[TrackerStat]:
         result = self._rpc_call("torrents.trackers.list", {"info_hash": torrent_id})
         trackers = _rpc_items(result)
-        stats: List[TrackerStat] = []
+        stats: list[TrackerStat] = []
         for tracker in trackers:
             stats.append(
                 TrackerStat(
                     tracker_url=str(tracker.get("url") or tracker.get("trackerUrl") or ""),
-                    scrape_complete=_first_int(tracker, ["scrape_complete", "scrapeComplete", "complete"]),
-                    scrape_incomplete=_first_int(tracker, ["scrape_incomplete", "scrapeIncomplete", "incomplete"]),
-                    scrape_downloaded=_first_int(tracker, ["scrape_downloaded", "scrapeDownloaded", "downloaded"]),
+                    scrape_complete=_first_int(
+                        tracker, ["scrape_complete", "scrapeComplete", "complete"]
+                    ),
+                    scrape_incomplete=_first_int(
+                        tracker, ["scrape_incomplete", "scrapeIncomplete", "incomplete"]
+                    ),
+                    scrape_downloaded=_first_int(
+                        tracker, ["scrape_downloaded", "scrapeDownloaded", "downloaded"]
+                    ),
                     scrape_status=str(
                         tracker.get("scrape_status")
                         or tracker.get("scrapeStatus")
@@ -134,9 +130,9 @@ class PorlaClient:
         result = self._rpc_call("torrents.remove", params)
         return result is not None
 
-    def _to_torrent(self, data: Dict[str, Any]) -> PorlaTorrent:
+    def _to_torrent(self, data: dict[str, Any]) -> PorlaTorrent:
         tags_value = _first(data, ["tags", "tag", "labels"])
-        tags: List[str] = []
+        tags: list[str] = []
         if isinstance(tags_value, list):
             tags = [str(x) for x in tags_value if x]
         elif isinstance(tags_value, str):
@@ -150,37 +146,36 @@ class PorlaClient:
             tags=tags,
         )
 
-    def _rpc_call(self, method: str, params: Dict[str, Any]) -> Optional[Any]:
+    def _rpc_call(self, method: str, params: dict[str, Any]) -> Any | None:
         url = self._url(self.config.jsonrpc_url)
-        payload = {"jsonrpc": "2.0", "method": method, "params": params, "id": 1}
+        payload = {"jsonrpc": "2.0", "method": method, "params": params}
         resp = self.session.post(
             url,
             json=payload,
             headers={**self._headers(), "Content-Type": "application/json"},
             timeout=self.config.request_timeout_seconds,
         )
-        if not resp.ok:
-            return None
-        data = resp.json()
-        if isinstance(data, dict) and data.get("error"):
-            return None
-        return data.get("result") if isinstance(data, dict) else None
+        resp.raise_for_status()
+        # resp =
+        # if error := resp.get("error"):
+        #     raise ValueError(f"Got error on calling method '{method}': {error}")
 
-    def _fetch_torrent_bytes(self, torrent_url: str) -> Optional[bytes]:
+        return resp.json()
+
+    def _fetch_torrent_bytes(self, torrent_url: str) -> bytes | None:
         resp = self.session.get(torrent_url, timeout=self.config.request_timeout_seconds)
-        if not resp.ok:
-            return None
+        resp.raise_for_status()
         return resp.content
 
 
-def _first(data: Dict[str, Any], keys: Iterable[str]) -> Any:
+def _first(data: dict[str, Any], keys: Iterable[str]) -> Any:
     for key in keys:
         if key in data and data[key] is not None:
             return data[key]
     return None
 
 
-def _first_int(data: Dict[str, Any], keys: Iterable[str]) -> Optional[int]:
+def _first_int(data: dict[str, Any], keys: Iterable[str]) -> int | None:
     value = _first(data, keys)
     if value is None:
         return None
@@ -190,7 +185,7 @@ def _first_int(data: Dict[str, Any], keys: Iterable[str]) -> Optional[int]:
         return None
 
 
-def _rpc_items(result: Any) -> List[Dict[str, Any]]:
+def _rpc_items(result: Any) -> list[dict[str, Any]]:
     if result is None:
         return []
     if isinstance(result, list):
