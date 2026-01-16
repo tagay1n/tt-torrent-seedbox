@@ -1,9 +1,0 @@
-[Unit]
-Description=ttseed ingest timer
-
-[Timer]
-OnCalendar=*:0/45
-Persistent=true
-
-[Install]
-WantedBy=timers.target

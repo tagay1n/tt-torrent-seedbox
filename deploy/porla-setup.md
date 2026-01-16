@@ -35,9 +35,10 @@ If Porla uses a config file, place it under `/var/lib/porla/config/` and update 
 
 ## 5) Install the systemd unit
 ```bash
-make install-porla-systemd
+sudo install -m 644 deploy/systemd/porla.service /etc/systemd/system/porla.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now porla.service
 ```
-If you want Porla to run as the `porla` user, add `User=porla` and `Group=porla` to `deploy/systemd/porla.service` before installing.
 
 ## 6) Wire ttseed to Porla
 Update `config.yaml`:

@@ -7,9 +7,7 @@ from sqlalchemy import select
 from config import load_config
 from db import (
     Torrent,
-    # get_engine,
     get_session,
-    # init_db,
 )
 from http_client import RateLimiter, build_session
 from login import login
@@ -19,6 +17,8 @@ from util import (
     parse_size,
     setup_logging,
 )
+import feedparser
+
 
 MAGNET_HREF_RE = re.compile(r"magnet:\?[^\"'\s]+", re.IGNORECASE)
 HREF_RE = re.compile(r"href=[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -31,8 +31,6 @@ def run(config_path: str) -> None:
     config = load_config(config_path)
     http_session = build_session(config.porla.retry_count)
 
-    # engine = get_engine(config.storage.db_path)
-    # init_db(engine)
     db_session = get_session(config.storage.db_path)
 
     limiter = RateLimiter(min_interval=0.8)
@@ -669,3 +667,7 @@ def _upsert_torrent(new_torrent, db_session):
 #     logger.debug("ingest complete %s", summary)
 #     record_run(session_db, "ingest", started_at, finished_at, True, summary)
 #     session_db.close()
+
+
+def feed():
+    pass

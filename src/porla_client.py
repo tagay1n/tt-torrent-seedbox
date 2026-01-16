@@ -41,7 +41,6 @@ class PorlaClient:
     def __init__(self, config: PorlaConfig, session: requests.Session) -> None:
         self.config = config
         self.session = session
-        self.tag_mode = (config.tag_mode or "porla").lower()
 
     def _headers(self) -> dict[str, str]:
         if self.config.token:
@@ -60,9 +59,7 @@ class PorlaClient:
         title,
         torrent_url: str | None,
     ) -> PorlaTorrent | None:
-        params: dict[str, Any] = {**self.config.add_params}
-        if self.config.add_preset:
-            params.setdefault("preset", self.config.add_preset)
+        params: dict[str, Any] = {}
         if self.config.add_save_path:
             params.setdefault("save_path", self.config.add_save_path)
         torrent_bytes = self._fetch_torrent_bytes(torrent_url)
@@ -82,11 +79,7 @@ class PorlaClient:
         items = _rpc_items(result)
         torrents = [self._to_torrent(item) for item in items if item]
         if tag:
-            filtered = [t for t in torrents if tag in t.tags]
-            if filtered:
-                return filtered
-            if self.tag_mode != "porla":
-                return []
+            return [t for t in torrents if tag in t.tags]
         return torrents
 
     def get_torrent(self, torrent_id: str) -> PorlaTorrent | None:
@@ -153,7 +146,7 @@ class PorlaClient:
             url,
             json=payload,
             headers={**self._headers(), "Content-Type": "application/json"},
-            timeout=self.config.request_timeout_seconds,
+            timeout=20,
         )
         resp.raise_for_status()
         # resp =
@@ -163,7 +156,7 @@ class PorlaClient:
         return resp.json()
 
     def _fetch_torrent_bytes(self, torrent_url: str) -> bytes | None:
-        resp = self.session.get(torrent_url, timeout=self.config.request_timeout_seconds)
+        resp = self.session.get(torrent_url, timeout=20)
         resp.raise_for_status()
         return resp.content
 
