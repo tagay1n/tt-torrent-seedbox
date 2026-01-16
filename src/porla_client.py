@@ -149,10 +149,6 @@ class PorlaClient:
             timeout=20,
         )
         resp.raise_for_status()
-        # resp =
-        # if error := resp.get("error"):
-        #     raise ValueError(f"Got error on calling method '{method}': {error}")
-
         return resp.json()
 
     def _fetch_torrent_bytes(self, torrent_url: str) -> bytes | None:

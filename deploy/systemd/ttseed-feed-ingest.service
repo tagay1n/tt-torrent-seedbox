@@ -1,0 +1,11 @@
+[Unit]
+Description=ttseed feed + ingest
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/ttseed
+ExecStart=/bin/bash -lc '/opt/ttseed/.venv/bin/python /opt/ttseed/src/cli.py feed --config /opt/ttseed/config.yaml && /opt/ttseed/.venv/bin/python /opt/ttseed/src/cli.py ingest-porla --config /opt/ttseed/config.yaml'
+
+[Install]
+WantedBy=multi-user.target

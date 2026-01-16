@@ -28,6 +28,23 @@ CLI help:
 python src/cli.py --help
 ```
 
+## Systemd (feed + ingest)
+Unit files live under `deploy/systemd/`. Install via Makefile:
+
+```bash
+make install-systemd
+```
+
+To remove:
+```bash
+make uninstall-systemd
+```
+
+If you previously installed old units (stats/reconcile/dashboard), disable and remove them:
+```bash
+make cleanup-old-systemd
+```
+
 ## Configuration
 Edit `config.yaml`. Minimal keys used:
 

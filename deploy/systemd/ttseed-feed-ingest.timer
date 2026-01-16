@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ttseed feed + ingest every 30 minutes
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=30m
+
+[Install]
+WantedBy=timers.target
