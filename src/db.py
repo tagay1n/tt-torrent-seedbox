@@ -10,7 +10,6 @@ from sqlalchemy import (
     Text,
     create_engine,
     event,
-    select,
 )
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker

@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urljoin
 
+import feedparser
 from bs4 import BeautifulSoup
 from sqlalchemy import select
 
@@ -17,8 +18,6 @@ from util import (
     parse_size,
     setup_logging,
 )
-import feedparser
-
 
 MAGNET_HREF_RE = re.compile(r"magnet:\?[^\"'\s]+", re.IGNORECASE)
 HREF_RE = re.compile(r"href=[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -108,7 +107,9 @@ def _parse_topic(config, session, topic_name, topic_path, limiter):
     soup = BeautifulSoup(resp.text, features="html.parser")
 
     torrent_download_link_a = soup.find("a", string="Торрентны йөкләргә")
-    if not torrent_download_link_a or not (torrent_download_link := torrent_download_link_a["href"]):
+    if not torrent_download_link_a or not (
+        torrent_download_link := torrent_download_link_a["href"]
+    ):
         logger.warning(f"Topic {topic_name}({topic_path}) does not have torrent url")
         return None
 
@@ -178,10 +179,9 @@ def feed(config_path: str) -> None:
             continue
         topic_url = urljoin(config.tracker.base_url, link)
         normalized = normalize_topic_url(topic_url)
-        exists = (
-            db_session.execute(select(Torrent).where(Torrent.topic_url == normalized))
-            .scalar_one_or_none()
-        )
+        exists = db_session.execute(
+            select(Torrent).where(Torrent.topic_url == normalized)
+        ).scalar_one_or_none()
         if exists:
             skipped += 1
             continue

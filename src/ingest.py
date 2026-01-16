@@ -1,4 +1,3 @@
-
 from sqlalchemy import select
 
 from config import load_config

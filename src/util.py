@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
+
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
