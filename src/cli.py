@@ -2,7 +2,6 @@
 import typer
 
 from config import load_config
-# from db import get_engine, init_db
 from discover import run as run_discover
 from ingest import run as run_ingest
 from feed import run as run_feed
@@ -25,12 +24,13 @@ def ingest_porla(config: str = "config.yaml"):
     run_ingest(config)
 
 
-# @app.command()
-# def initdb(config: str = "config.yaml"):
-#     cfg = load_config(config)
-#     # engine = get_engine(cfg.storage.db_path)
-#     # init_db(engine)
-#     app.echo("db initialized")
+@app.command()
+def initdb(config: str = "config.yaml"):
+    from db import get_engine, init_db
+    cfg = load_config(config)
+    engine = get_engine(cfg.storage.db_path)
+    init_db(engine)
+    # app.echo("db initialized")
 
 
 if __name__ == "__main__":

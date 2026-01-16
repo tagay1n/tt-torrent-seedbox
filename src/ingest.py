@@ -39,5 +39,5 @@ def run(config_path):
         torrent.added_to_porla_at = iso_now()
         db_session.commit()
         ingested_count += 1
-        logger.debug("Added torrent '{torrent.title}' to porla")
+        logger.debug(f"Added torrent '{torrent.title}' to porla")
     logger.debug(f"Ingested {ingested_count} torrents to porla")

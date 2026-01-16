@@ -20,6 +20,9 @@ initdb:
 discover:
 	$(VENV)/bin/python src/cli.py discover --config config.yaml
 
+ingest-porla:
+	$(VENV)/bin/python src/cli.py ingest-porla --config config.yaml
+
 # Install ttseed into /opt/ttseed and enable systemd units/timers
 install-systemd:
 	sudo mkdir -p /opt/ttseed
