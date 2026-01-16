@@ -57,9 +57,9 @@ def _parse(config, http_session, db_session, limiter):
             logger.debug(
                 f"--> Parsing topic '{topic_name}'({topic_path}) in category '{category_name}'"
             )
-            torrent = _parse_topic(config, http_session, topic_name, topic_path, limiter)
-            _upsert_torrent(torrent, db_session)
-            logger.debug(f"--> Parsed topic '{topic_name}'")
+            if torrent := _parse_topic(config, http_session, topic_name, topic_path, limiter):
+                _upsert_torrent(torrent, db_session)
+                logger.debug(f"--> Parsed topic '{topic_name}'")
 
 
 def _parse_categories_page(config, session, categories_path="/viewforum.php?f=49"):
