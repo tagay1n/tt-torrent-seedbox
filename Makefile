@@ -15,11 +15,10 @@ deps: venv
 
 # Initialize the SQLite schema (data/state.db)
 initdb:
-	$(VENV)/bin/python src/main.py initdb --config config.yaml
+	$(VENV)/bin/python src/cli.py initdb --config config.yaml
 
-# Run feed ingest once
-run-ingest:
-	$(VENV)/bin/python src/main.py ingest --config config.yaml
+discover:
+	$(VENV)/bin/python src/cli.py discover --config config.yaml
 
 # Install ttseed into /opt/ttseed and enable systemd units/timers
 install-systemd:

@@ -93,12 +93,12 @@ class Torrent(Base):
 #     created_at = Column(Text)
 
 
-# class Meta(Base):
-#     """ORM model for key/value metadata (schema version, last run timestamps)."""
-#     __tablename__ = "meta"
+class Meta(Base):
+    """ORM model for key/value metadata (schema version, last run timestamps)."""
+    __tablename__ = "meta"
 
-#     key = Column(Text, primary_key=True)
-#     value = Column(Text)
+    key = Column(Text, primary_key=True)
+    value = Column(Text)
 
 
 # class HttpCache(Base):
@@ -136,15 +136,16 @@ def get_session(db_path: str) -> Session:
     return factory()
 
 
-def init_db(engine: Engine) -> None:
-    Base.metadata.create_all(engine)
-    with Session(engine) as session:
-        existing = session.execute(
-            select(Meta).where(Meta.key == "schema_version")
-        ).scalar_one_or_none()
-        if not existing:
-            session.add(Meta(key="schema_version", value=str(SCHEMA_VERSION)))
-            session.commit()
+# def init_db(engine: Engine) -> None:
+#     Base.metadata.create_all(engine)
+#     with Session(engine) as session:
+#         existing = session.execute(
+#             # use absolute path for meta table
+#             select(Meta).where(Meta.key == "schema_version")
+#         ).scalar_one_or_none()
+#         if not existing:
+#             session.add(Meta(key="schema_version", value=str(SCHEMA_VERSION)))
+#             session.commit()
 
 
 # def get_meta(session: Session, key: str) -> Optional[str]:

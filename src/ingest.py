@@ -4,9 +4,9 @@ from sqlalchemy import select
 from config import load_config
 from db import (
     Torrent,
-    get_engine,
+    # get_engine,
     get_session,
-    init_db,
+    # init_db,
 )
 from http_client import RateLimiter, build_session
 from login import login
@@ -20,8 +20,8 @@ def run(config_path):
     config = load_config(config_path)
     http_session = build_session(config.porla.retry_count)
 
-    engine = get_engine(config.storage.db_path)
-    init_db(engine)
+    # engine = get_engine(config.storage.db_path)
+    # init_db(engine)
     db_session = get_session(config.storage.db_path)
     limiter = RateLimiter(min_interval=0.5)
     porla = PorlaClient(config.porla, http_session)
