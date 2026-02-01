@@ -1,3 +1,5 @@
+"""Config loader with typed dataclasses for tracker/porla/storage settings."""
+
 from dataclasses import dataclass
 from typing import Any
 

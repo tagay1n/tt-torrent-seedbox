@@ -1,3 +1,8 @@
+"""SQLite ORM setup and helpers for the ttseed state database.
+
+Defines models plus engine/session helpers used by the CLI commands.
+"""
+
 from __future__ import annotations
 
 import os

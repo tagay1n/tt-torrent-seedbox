@@ -1,3 +1,8 @@
+"""Minimal JSON-RPC client for Porla, focused on adding torrents.
+
+Also normalizes torrent/trackers data for internal use.
+"""
+
 import base64
 from collections.abc import Iterable
 from dataclasses import dataclass, field

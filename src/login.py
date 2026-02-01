@@ -1,3 +1,5 @@
+"""Helper for logging into phpBB and persisting cookies in a session."""
+
 import re
 
 from config import Config

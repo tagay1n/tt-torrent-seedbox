@@ -1,3 +1,5 @@
+"""Typer CLI entrypoint for discover/feed/ingest and DB init commands."""
+
 import typer
 
 from config import load_config

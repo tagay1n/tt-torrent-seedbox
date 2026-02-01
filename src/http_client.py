@@ -1,3 +1,5 @@
+"""HTTP session factory and a simple rate limiter for outbound requests."""
+
 import time
 from dataclasses import dataclass
 

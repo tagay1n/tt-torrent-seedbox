@@ -1,3 +1,8 @@
+"""Tracker discovery: crawl categories/topics or RSS feed and upsert torrents.
+
+Handles login, polite fetching, and URL normalization for incoming topics.
+"""
+
 import re
 from urllib.parse import urljoin
 

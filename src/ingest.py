@@ -1,3 +1,5 @@
+"""Ingest queued torrents into Porla and mark them as added in the DB."""
+
 from sqlalchemy import select
 
 from config import load_config

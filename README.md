@@ -6,7 +6,7 @@ Minimal discovery + Porla ingest for a phpBB tracker.
 - Logs in to the tracker and crawls categories/topics to find .torrent links and stats.
 - Stores torrents in SQLite.
 - Pushes new torrents to Porla via JSON-RPC.
-- `feed` command parses `feed.php` (currently for debugging).
+- `feed` command parses `feed.php` for incremental discovery (used by the systemd timer).
 
 ## Requirements
 - Ubuntu 22.04
@@ -34,6 +34,8 @@ Unit files live under `deploy/systemd/`. Install via Makefile:
 ```bash
 make install-systemd
 ```
+
+This timer runs `feed` followed by `ingest-porla` in a single unit.
 
 To remove:
 ```bash
