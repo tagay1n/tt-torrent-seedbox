@@ -16,6 +16,7 @@ class RateLimiter:
     _last: float = 0.0
 
     def wait(self) -> None:
+        """Block until the minimum interval from the previous call has elapsed."""
         now = time.monotonic()
         elapsed = now - self._last
         if elapsed < self.min_interval:
@@ -24,6 +25,7 @@ class RateLimiter:
 
 
 def build_session(retry_count: int) -> requests.Session:
+    """Build a shared HTTP session with retry policy for transient failures."""
     retry = Retry(
         total=retry_count,
         backoff_factor=0.5,

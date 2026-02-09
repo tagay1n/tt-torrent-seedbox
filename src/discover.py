@@ -32,6 +32,7 @@ logger = setup_logging()
 
 
 def run(config_path: str) -> None:
+    """Run full forum discovery workflow from categories down to topic pages."""
     config = load_config(config_path)
     http_session = build_session(config.porla.retry_count)
 
@@ -44,6 +45,7 @@ def run(config_path: str) -> None:
 
 
 def _parse(config, http_session, db_session, limiter):
+    """Traverse categories and topics, parse each topic, and upsert DB rows."""
     categories = _parse_categories_page(config, http_session)
     logger.debug(f"Found {len(categories)} categories for parsing")
     for category_path, category_name in categories.items():
@@ -65,6 +67,7 @@ def _parse(config, http_session, db_session, limiter):
 
 
 def _parse_categories_page(config, session, categories_path="/viewforum.php?f=49"):
+    """Parse top-level category links from the configured forum page."""
     url = urljoin(config.tracker.base_url, categories_path)
     resp = session.get(url, timeout=20)
     resp.raise_for_status()
@@ -75,6 +78,7 @@ def _parse_categories_page(config, session, categories_path="/viewforum.php?f=49
 
 
 def _parse_topics_in_category_page(config, session, category_path, limiter):
+    """Collect all topic links in a category, following pagination."""
     result = {}
     url = urljoin(config.tracker.base_url, category_path)
     while True:
@@ -105,6 +109,12 @@ def _parse_topics_in_category_page(config, session, category_path, limiter):
 
 
 def _parse_topic(config, session, topic_name, topic_path, limiter):
+    """Parse torrent metadata from a topic page.
+
+    Extracts and normalizes the torrent attachment URL, title, tracker-side
+    size, and current seed/leech/download stats. Returns `None` when the topic
+    does not expose a torrent download action.
+    """
     url = urljoin(config.tracker.base_url, topic_path)
     limiter.wait()
     resp = session.get(url, timeout=20)
@@ -139,6 +149,7 @@ def _parse_topic(config, session, topic_name, topic_path, limiter):
 
 
 def _upsert_torrent(new_torrent, db_session):
+    """Insert or refresh a torrent row keyed by canonical topic URL."""
     torrent = db_session.execute(
         select(Torrent).where(Torrent.topic_url == new_torrent.topic_url)
     ).scalar_one_or_none()
@@ -163,6 +174,7 @@ def _upsert_torrent(new_torrent, db_session):
 
 
 def feed(config_path: str) -> None:
+    """Ingest only feed-discovered topics, then parse each new topic page."""
     config = load_config(config_path)
     http_session = build_session(config.porla.retry_count)
     db_session = get_session(config.storage.db_path)

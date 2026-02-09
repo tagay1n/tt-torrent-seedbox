@@ -7,6 +7,7 @@ import yaml
 
 
 def _get(d: dict[str, Any], key: str, default: Any) -> Any:
+    """Return a mapping value, falling back when key is missing or null."""
     if key not in d or d[key] is None:
         return default
     return d[key]
@@ -14,6 +15,8 @@ def _get(d: dict[str, Any], key: str, default: Any) -> Any:
 
 @dataclass
 class TrackerConfig:
+    """Tracker endpoints and login options."""
+
     base_url: str
     feed_url: str
     login_url: str = ""
@@ -24,6 +27,8 @@ class TrackerConfig:
 
 @dataclass
 class PorlaConfig:
+    """Connection settings for Porla JSON-RPC API."""
+
     base_url: str
     token: str
     retry_count: int = 3
@@ -33,17 +38,22 @@ class PorlaConfig:
 
 @dataclass
 class StorageConfig:
+    """Storage backend settings."""
+
     db_path: str = "data/state.db"
 
 
 @dataclass
 class Config:
+    """Root application configuration object."""
+
     tracker: TrackerConfig
     porla: PorlaConfig
     storage: StorageConfig
 
 
 def load_config(path: str) -> Config:
+    """Load YAML config and map it to typed dataclasses with defaults."""
     with open(path, encoding="utf-8") as handle:
         raw = yaml.safe_load(handle) or {}
 

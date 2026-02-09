@@ -53,6 +53,7 @@ class Torrent(Base):
     topic_last_modified = Column(Text)
 
     def __repr__(self):
+        """Return a compact debug representation."""
         return f"<Torrent(id={self.id}, title={self.title}, status={self.status})>"
 
 
@@ -60,12 +61,14 @@ _ENGINE_CACHE: dict[str, Engine] = {}
 
 
 def get_engine(db_path: str) -> Engine:
+    """Create or reuse a cached SQLite engine for the configured path."""
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     if db_path not in _ENGINE_CACHE:
         engine = create_engine(f"sqlite:///{db_path}", connect_args={"check_same_thread": False})
 
         @event.listens_for(engine, "connect")
         def _set_sqlite_pragma(dbapi_connection, _):  # type: ignore[no-untyped-def]
+            """Enable SQLite foreign key constraints for each new connection."""
             if isinstance(dbapi_connection, sqlite3.Connection):
                 cursor = dbapi_connection.cursor()
                 cursor.execute("PRAGMA foreign_keys=ON")
@@ -76,10 +79,12 @@ def get_engine(db_path: str) -> Engine:
 
 
 def get_session(db_path: str) -> Session:
+    """Build a SQLAlchemy session bound to the configured SQLite engine."""
     engine = get_engine(db_path)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     return factory()
 
 
 def init_db(engine: Engine) -> None:
+    """Create all known tables if they do not already exist."""
     Base.metadata.create_all(engine)

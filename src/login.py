@@ -15,6 +15,7 @@ VALUE_RE = re.compile(r"value=[\"']?([^\"'>]*)", re.IGNORECASE)
 def _build_login_payload(
     html: str, username: str, password: str, extra: dict[str, str]
 ) -> dict[str, str]:
+    """Extract hidden form fields and merge credential overrides."""
     payload: dict[str, str] = {}
     for input_tag in INPUT_RE.findall(html):
         name_match = NAME_RE.search(input_tag)
@@ -33,6 +34,12 @@ def _build_login_payload(
 
 
 def login(config: Config, session) -> bool:
+    """Authenticate against phpBB login form and verify session cookies.
+
+    The function fetches the login page first so hidden anti-CSRF fields are
+    included, submits credentials, then validates success by checking for
+    tracker-specific cookie prefixes in the session jar.
+    """
     if not (username := config.tracker.login_username) or not (
         password := config.tracker.login_password
     ):

@@ -7,10 +7,12 @@ from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 
 def iso_now() -> str:
+    """Return current UTC timestamp in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def parse_size(text: str) -> int | None:
+    """Parse byte count from localized text like `(1 234 байт)`."""
     m = re.search(r"\(([\d\s\u00A0\u202F]+)\s*байт\)", text, flags=re.IGNORECASE)
     if not m:
         raise ValueError(f"Could not parse bytes count in the string: '{text}'")
@@ -21,6 +23,7 @@ def parse_size(text: str) -> int | None:
 
 
 def normalize_topic_url(url: str) -> str:
+    """Canonicalize forum topic URLs to stable `(f,t)` query form."""
     parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         return url
@@ -40,6 +43,7 @@ def normalize_topic_url(url: str) -> str:
 
 
 def setup_logging() -> logging.Logger:
+    """Configure process-wide logging and return the project logger."""
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s %(levelname)s %(message)s",

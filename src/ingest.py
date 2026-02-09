@@ -18,6 +18,7 @@ logger = setup_logging()
 
 
 def run(config_path):
+    """Add `new` torrents from SQLite into Porla and mark them as queued."""
     config = load_config(config_path)
     http_session = build_session(config.porla.retry_count)
 

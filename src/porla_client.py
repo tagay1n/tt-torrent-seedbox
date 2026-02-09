@@ -44,18 +44,22 @@ class PorlaClient:
     """JSON-RPC client wrapper for Porla API."""
 
     def __init__(self, config: PorlaConfig, session: requests.Session) -> None:
+        """Initialize client with resolved config and shared HTTP session."""
         self.config = config
         self.session = session
 
     def _headers(self) -> dict[str, str]:
+        """Build request headers including optional bearer token auth."""
         if self.config.token:
             return {"Authorization": f"Bearer {self.config.token}"}
         return {}
 
     def _url(self, path: str) -> str:
+        """Resolve API path against Porla base URL."""
         return urljoin(self.config.base_url.rstrip("/") + "/", path.lstrip("/"))
 
     def health(self) -> bool:
+        """Return whether the Porla JSON-RPC endpoint responds successfully."""
         result = self._rpc_call("sys.versions", {})
         return result is not None
 
@@ -64,6 +68,7 @@ class PorlaClient:
         title,
         torrent_url: str | None,
     ) -> PorlaTorrent | None:
+        """Download a `.torrent`, submit it via JSON-RPC, and return info hash."""
         params: dict[str, Any] = {}
         if self.config.add_save_path:
             params.setdefault("save_path", self.config.add_save_path)
@@ -80,6 +85,7 @@ class PorlaClient:
         return next(i for i in result["result"]["info_hash"] if i)
 
     def list_torrents(self, tag: str) -> list[PorlaTorrent]:
+        """List torrents and optionally filter by an exact tag label."""
         result = self._rpc_call("torrents.list", {})
         items = _rpc_items(result)
         torrents = [self._to_torrent(item) for item in items if item]
@@ -88,6 +94,7 @@ class PorlaClient:
         return torrents
 
     def get_torrent(self, torrent_id: str) -> PorlaTorrent | None:
+        """Find a torrent by Porla id or infohash."""
         result = self._rpc_call("torrents.list", {})
         items = _rpc_items(result)
         for item in items:
@@ -97,6 +104,7 @@ class PorlaClient:
         return None
 
     def get_trackers(self, torrent_id: str) -> list[TrackerStat]:
+        """Return normalized tracker scrape stats for a single torrent."""
         result = self._rpc_call("torrents.trackers.list", {"info_hash": torrent_id})
         trackers = _rpc_items(result)
         stats: list[TrackerStat] = []
@@ -124,11 +132,13 @@ class PorlaClient:
         return stats
 
     def remove_torrent(self, torrent_id: str, delete_data: bool) -> bool:
+        """Remove torrent from Porla, optionally deleting data on disk."""
         params = {"info_hash": torrent_id, "delete_data": delete_data}
         result = self._rpc_call("torrents.remove", params)
         return result is not None
 
     def _to_torrent(self, data: dict[str, Any]) -> PorlaTorrent:
+        """Normalize heterogeneous Porla torrent fields into one dataclass."""
         tags_value = _first(data, ["tags", "tag", "labels"])
         tags: list[str] = []
         if isinstance(tags_value, list):
@@ -145,6 +155,7 @@ class PorlaClient:
         )
 
     def _rpc_call(self, method: str, params: dict[str, Any]) -> Any | None:
+        """Execute one JSON-RPC request and return parsed JSON payload."""
         url = self._url(self.config.jsonrpc_url)
         payload = {"jsonrpc": "2.0", "method": method, "params": params}
         resp = self.session.post(
@@ -157,12 +168,14 @@ class PorlaClient:
         return resp.json()
 
     def _fetch_torrent_bytes(self, torrent_url: str) -> bytes | None:
+        """Fetch raw `.torrent` payload from tracker URL."""
         resp = self.session.get(torrent_url, timeout=20)
         resp.raise_for_status()
         return resp.content
 
 
 def _first(data: dict[str, Any], keys: Iterable[str]) -> Any:
+    """Return first non-null value for a list of possible key aliases."""
     for key in keys:
         if key in data and data[key] is not None:
             return data[key]
@@ -170,6 +183,7 @@ def _first(data: dict[str, Any], keys: Iterable[str]) -> Any:
 
 
 def _first_int(data: dict[str, Any], keys: Iterable[str]) -> int | None:
+    """Return first alias value coerced to `int`, else `None`."""
     value = _first(data, keys)
     if value is None:
         return None
@@ -180,6 +194,7 @@ def _first_int(data: dict[str, Any], keys: Iterable[str]) -> int | None:
 
 
 def _rpc_items(result: Any) -> list[dict[str, Any]]:
+    """Extract dict items list from different JSON-RPC response layouts."""
     if result is None:
         return []
     if isinstance(result, list):
